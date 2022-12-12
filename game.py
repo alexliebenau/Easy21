@@ -57,6 +57,7 @@ class game:
                 res -= c.value
         return res
 
+
 class gamestate(game):
     def __init__(self, inGame, reward=None):  # overloaded using reward: set isTerminal to True if reward is given
         #  properties of state: dealer's first card & player's sum of cards
