@@ -69,10 +69,10 @@ class sarsa(framework):
         greedy = rd.choices([True, False], weights=self.getProb(s), k=1)  # weighted probability if greedy or not
         v = self.Q[s.dealerSum, s.playerSum]  # array with state values depending on action
         if greedy:
-            if v[0] > v[1]:
-                return 0
-            else:
+            if v[0] < v[1]:
                 return 1
+            else:
+                return 0
         else:
             return rd.choice([0, 1])
 
