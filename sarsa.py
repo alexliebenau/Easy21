@@ -26,24 +26,21 @@ class sarsa(framework):
         self.lmd = l
 
     def getQ(self, i):  # load action-state matrix. i: number of episodes to go through
-
-        # for i in range(0, i):
-            E = np.zeros((10, 22, 2), dtype='float32')
+        bar = self.getBar('Iterations: ', i)
+        for i in range(0, i):
+            self.E = np.zeros((10, 22, 2), dtype='float32')
             for d in range(0, len(self.Q)):
                 for p in range(0, len(self.Q[0])):
                     a = self.epsilon(self.S[d][p])  # get action from epsilon-greedy policy
                     s_next, reward = self.step(self.S[d][p], a)  # get next state
-                    self.update(self.S[d][p], s_next, a, reward, E)  # update Q, E
+                    self.update(self.S[d][p], s_next, a, reward)  # update Q, E
                     while not s_next.isTerminal:
                         a = self.epsilon(self.S[s_next.dealerSum][s_next.playerSum])  # get next action based on greedy
                         s_next, reward = self.step(self.S[s_next.dealerSum][s_next.playerSum], a)  # get next state
                         self.update(self.S[d][p], s_next, a, reward)  # update Q, E
             bar.next()
+        bar.finish()
 
-
-    def iterate(self, i):  # run parallel iterations of Q
-        bar = self.getBar('Iterations: ', i)
-        Parallel(n_jobs=-3)(delayed(self.getQ)((iter) for iter in range(i)))
     def step(self, s, a):
         s.N += 1  # hello state for i have visited u plz increment counter
         self.N[s.dealerSum, s.playerSum, a] += 1  # thiz 1 too plz
@@ -51,7 +48,7 @@ class sarsa(framework):
         s_next, reward = g.step(s, self.A[a])  # retrieve new state (res) and reward
         return s_next, reward
 
-    def update(self, s, s_next, a, reward, E):
+    def update(self, s, s_next, a, reward):
         self.E[s.dealerSum, s.playerSum, a] += 1  # increment current eligibility trace
         for d in range(0, len(self.Q)):  # instant online update of Q and E
             for p in range(0, len(self.Q[0])):
