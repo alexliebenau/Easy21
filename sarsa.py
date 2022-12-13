@@ -58,7 +58,7 @@ class sarsa(framework):
 
     def delta(self, s, s_next, a, reward):  # get TD error
         if s_next.isTerminal:
-            return reward - self.Q[s.dealerSum, s.playerSum, a]  # reward
+            return reward - self.Q[s.dealerSum, s.playerSum, a]  # if terminal there is no q_next
         else:
             d_next = s_next.dealerSum
             p_next = s_next.playerSum
@@ -119,5 +119,5 @@ if __name__ == '__main__':
     print('\n\n')
     inst = sarsa(l/10)
     inst.run(i)
-    inst.printRes()
-    # inst.plotRes()
+    # inst.printRes()
+    inst.plotRes()

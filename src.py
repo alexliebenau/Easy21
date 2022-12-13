@@ -18,8 +18,7 @@ class framework():
                 tmp.append(state(dealerCard, playerSum))
             self.S.append(tmp)  # S[dealerCard][playerSum]
 
-        # self.A = {'hit': 0, 'stick': 1}  # initialize possible actions
-        self.A = {0: 'hit', 1: 'stick'}
+        self.A = {0: 'hit', 1: 'stick'}  # initialize dictionary for possible actions
         self.Q = np.zeros((d, p, 2), dtype='float32')  # action-state matrix Q = [d, p, a] where a=0: hit, a=1: stick
         self.V = np.zeros((d, p), dtype='float32')  # value function
         self.N = np.zeros((d, p, 2), dtype='int')  # counts how many times a has been selected in a
