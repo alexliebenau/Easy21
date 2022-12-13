@@ -1,7 +1,8 @@
 # usr/bin/python3
 
+from sarsa import sarsa
 from game import game
-from src import framework
+from src import framework, state
 from mc import mc
 import numpy as np
 import random as rd
@@ -18,67 +19,67 @@ from joblib import Parallel, delayed
 #         ---> dim(E) = dim(Q)
 
 
-class sarsa(framework):
+class sarsa_parallel(sarsa):
     # implement Sarsa(lambda) algorithm
     def __init__(self, l):
         super().__init__()
-        self.E = self.Q  # eligibility traces -- same initialization as Q
+        # self.E = self.Q  # eligibility traces -- same initialization as Q
         self.lmd = l
 
     def getQ(self, i):  # load action-state matrix. i: number of episodes to go through
+        bar = self.getBar('Iterations: ', i)
+        Parallel(n_jobs=-3)(delayed(self.iterate)((iter) for iter in range(i)))
+        bar.finish()
 
-        # for i in range(0, i):
+    def iterate(self, i):  # run parallel iterations of Q
+        for iter in range(i):
             E = np.zeros((10, 22, 2), dtype='float32')
             for d in range(0, len(self.Q)):
                 for p in range(0, len(self.Q[0])):
                     a = self.epsilon(self.S[d][p])  # get action from epsilon-greedy policy
                     s_next, reward = self.step(self.S[d][p], a)  # get next state
-                    self.update(self.S[d][p], s_next, a, reward, E)  # update Q, E
+                    E = self.update(self.S[d][p], s_next, a, reward, E)  # update Q, E
                     while not s_next.isTerminal:
                         a = self.epsilon(self.S[s_next.dealerSum][s_next.playerSum])  # get next action based on greedy
                         s_next, reward = self.step(self.S[s_next.dealerSum][s_next.playerSum], a)  # get next state
-                        self.update(self.S[d][p], s_next, a, reward)  # update Q, E
+                        E = self.update(self.S[d][p], s_next, a, reward, E)  # update Q, E
             bar.next()
+    # def step(self, s, a):
+    #     s.N += 1  # hello state for i have visited u plz increment counter
+    #     self.N[s.dealerSum, s.playerSum, a] += 1  # thiz 1 too plz
+    #     g = game(s.dealerSum, s.playerSum)  # initialize game environment from current state
+    #     s_next, reward = g.step(s, self.A[a])  # retrieve new state (res) and reward
+    #     return s_next, reward
 
-
-    def iterate(self, i):  # run parallel iterations of Q
-        bar = self.getBar('Iterations: ', i)
-        Parallel(n_jobs=-3)(delayed(self.getQ)((iter) for iter in range(i)))
-    def step(self, s, a):
-        s.N += 1  # hello state for i have visited u plz increment counter
-        self.N[s.dealerSum, s.playerSum, a] += 1  # thiz 1 too plz
-        g = game(s.dealerSum, s.playerSum)  # initialize game environment from current state
-        s_next, reward = g.step(s, self.A[a])  # retrieve new state (res) and reward
-        return s_next, reward
-
-    def update(self, s, s_next, a, reward, E):
-        self.E[s.dealerSum, s.playerSum, a] += 1  # increment current eligibility trace
+    def update(self, s, s_next, a, reward, E):  # returns E to use it in smaller scope for parallel
+        E[s.dealerSum, s.playerSum, a] += 1  # increment current eligibility trace
         for d in range(0, len(self.Q)):  # instant online update of Q and E
             for p in range(0, len(self.Q[0])):
                 for a in (0, 1):
                     if self.N[d, p, a] != 0:  # if state hasn't been visited its E is zero anyway
-                        self.Q[d, p, a] += self.delta(s, s_next, a, reward) / self.N[d, p, a] * self.E[d, p, a]
-                    self.E[d, p, a] = self.lmd * self.E[d, p, a]
+                        self.Q[d, p, a] += self.delta(s, s_next, a, reward) / self.N[d, p, a] * E[d, p, a]
+                    E[d, p, a] = self.lmd * E[d, p, a]
+        return E
 
-    def delta(self, s, s_next, a, reward):  # get TD error
-        if s_next.isTerminal:
-            return reward - self.Q[s.dealerSum, s.playerSum, a]  # if terminal there is no q_next
-        else:
-            d_next = s_next.dealerSum
-            p_next = s_next.playerSum
-            q_next = self.Q[d_next, p_next, self.epsilon(self.S[d_next][p_next])]  # get next q based on eps-greedy
-            return q_next - self.Q[s.dealerSum, s.playerSum, a]  # TD error (omitted reward because always 0 if not terminal)
-
-    def epsilon(self, s):  # epsilon-greedy policy. s: current state
-        greedy = rd.choices([True, False], weights=self.getProb(s), k=1)  # weighted probability if greedy or not
-        v = self.Q[s.dealerSum, s.playerSum]  # array with state values depending on action
-        if greedy:
-            if v[0] < v[1]:
-                return 1
-            else:
-                return 0
-        else:
-            return rd.choice([0, 1])
+    # def delta(self, s, s_next, a, reward):  # get TD error
+    #     if s_next.isTerminal:
+    #         return reward - self.Q[s.dealerSum, s.playerSum, a]  # if terminal there is no q_next
+    #     else:
+    #         d_next = s_next.dealerSum
+    #         p_next = s_next.playerSum
+    #         q_next = self.Q[d_next, p_next, self.epsilon(self.S[d_next][p_next])]  # get next q based on eps-greedy
+    #         return q_next - self.Q[s.dealerSum, s.playerSum, a]  # TD error (omitted reward because always 0 if not terminal)
+    #
+    # def epsilon(self, s):  # epsilon-greedy policy. s: current state
+    #     greedy = rd.choices([True, False], weights=self.getProb(s), k=1)  # weighted probability if greedy or not
+    #     v = self.Q[s.dealerSum, s.playerSum]  # array with state values depending on action
+    #     if greedy:
+    #         if v[0] < v[1]:
+    #             return 1
+    #         else:
+    #             return 0
+    #     else:
+    #         return rd.choice([0, 1])
 
 
 def ms_error():  # get mean-squared error of difference to mc
