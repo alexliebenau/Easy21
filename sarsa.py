@@ -53,27 +53,21 @@ class sarsa(framework):
         for d in range(0, len(self.Q)):  # instant online update of Q and E
             for p in range(0, len(self.Q[0])):
                 for a in (0, 1):
-                    if self.N[d, p, a] != 0:
-                        delta =self.delta(s, s_next, a, reward)
-                        E = self.E[d, p, a]
-                        N = self.N[d, p, a]
-                        Q =  delta / N * E
-                        newQ = self.Q[d, p , a] + Q
-                        self.Q[d, p , a] = newQ
-                        # self.Q[d, p, a] += self.delta(s, s_next, a, reward) / self.N[d, p, a] * self.E[d, p, a]
+                    if self.N[d, p, a] != 0:  # if state hasn't been visited its E is zero anyway
+                        self.Q[d, p, a] += self.delta(s, s_next, a, reward) / self.N[d, p, a] * self.E[d, p, a]
                     self.E[d, p, a] = self.lmd * self.E[d, p, a]
 
-    def delta(self, s, s_next, a, reward):  # get TD error
+    def delta(self, d, p, s_next, a, reward):  # get TD error
         if s_next.isTerminal:
-            return reward  # reward
-            print('@ d / p   ', s.dealerSum, ' / ', s.playerSum, '  q next is ', q_next, ', current q is ',
-                  self.Q[s.dealerSum, s.playerSum, a])
+            return reward - self.Q[d, p, a]  # reward
+            # print('@ d / p   ', s.dealerSum, ' / ', s.playerSum, '  q next is ', q_next, ', current q is ',
+            #       self.Q[s.dealerSum, s.playerSum, a])
         else:
             d_next = s_next.dealerSum
             p_next = s_next.playerSum
             q_next = self.Q[d_next, p_next, self.epsilon(self.S[d_next][p_next])]  # get next q based on eps-greedy
-            print('@ d / p   ', s.dealerSum, ' / ', s.playerSum, '  q next is ', q_next,', current q is ', self.Q[s.dealerSum, s.playerSum, a])
-            return q_next - self.Q[s.dealerSum, s.playerSum, a]  # TD error (omitted reward)
+            # print('@ d / p   ', s.dealerSum, ' / ', s.playerSum, '  q next is ', q_next,', current q is ', self.Q[s.dealerSum, s.playerSum, a])
+            return q_next - self.Q[d, p, a]  # TD error (omitted reward because always 0 if not terminal)
 
     def epsilon(self, s):  # epsilon-greedy policy. s: current state
         greedy = rd.choices([True, False], weights=self.getProb(s), k=1)  # weighted probability if greedy or not
