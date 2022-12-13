@@ -57,8 +57,9 @@ class sarsa(framework):
                         delta =self.delta(s, s_next, a, reward)
                         E = self.E[d, p, a]
                         N = self.N[d, p, a]
-                        Q = self.Q[d, p , a] + delta / N * E
-                        self.Q[d, p , a] += Q
+                        Q =  delta / N * E
+                        newQ = self.Q[d, p , a] + Q
+                        self.Q[d, p , a] = newQ
                         # self.Q[d, p, a] += self.delta(s, s_next, a, reward) / self.N[d, p, a] * self.E[d, p, a]
                     self.E[d, p, a] = self.lmd * self.E[d, p, a]
 
