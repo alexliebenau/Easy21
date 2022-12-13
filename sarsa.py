@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 # state space S[d, p]
 # action space A = [0, 1]
 # value function V[S[d, p]]
-# action function Q[S[d, p], A]
+# quality function Q[S[d, p], A]
 # eligibility trace E[S[d, p], A]
 #         ---> dim(E) = dim(Q)
 
@@ -33,7 +33,6 @@ class sarsa(framework):
                     a = self.epsilon(self.S[d][p])  # get action from epsilon-greedy policy
                     s_next, reward = self.step(self.S[d][p], a)  # get next state
                     self.update(self.S[d][p], s_next, a, reward)  # update Q, E
-                    # print('Is terminal? ', s_next.isTerminal)
                     while not s_next.isTerminal:
                         a = self.epsilon(self.S[s_next.dealerSum][s_next.playerSum])  # get next action based on greedy
                         s_next, reward = self.step(self.S[s_next.dealerSum][s_next.playerSum], a)  # get next state
@@ -57,17 +56,14 @@ class sarsa(framework):
                         self.Q[d, p, a] += self.delta(s, s_next, a, reward) / self.N[d, p, a] * self.E[d, p, a]
                     self.E[d, p, a] = self.lmd * self.E[d, p, a]
 
-    def delta(self, d, p, s_next, a, reward):  # get TD error
+    def delta(self, s, s_next, a, reward):  # get TD error
         if s_next.isTerminal:
-            return reward - self.Q[d, p, a]  # reward
-            # print('@ d / p   ', s.dealerSum, ' / ', s.playerSum, '  q next is ', q_next, ', current q is ',
-            #       self.Q[s.dealerSum, s.playerSum, a])
+            return reward - self.Q[s.dealerSum, s.playerSum, a]  # reward
         else:
             d_next = s_next.dealerSum
             p_next = s_next.playerSum
             q_next = self.Q[d_next, p_next, self.epsilon(self.S[d_next][p_next])]  # get next q based on eps-greedy
-            # print('@ d / p   ', s.dealerSum, ' / ', s.playerSum, '  q next is ', q_next,', current q is ', self.Q[s.dealerSum, s.playerSum, a])
-            return q_next - self.Q[d, p, a]  # TD error (omitted reward because always 0 if not terminal)
+            return q_next - self.Q[s.dealerSum, s.playerSum, a]  # TD error (omitted reward because always 0 if not terminal)
 
     def epsilon(self, s):  # epsilon-greedy policy. s: current state
         greedy = rd.choices([True, False], weights=self.getProb(s), k=1)  # weighted probability if greedy or not
