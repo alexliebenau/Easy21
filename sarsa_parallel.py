@@ -7,44 +7,72 @@ from joblib import Parallel, delayed
 from functools import partial
 import random as rd
 from game import game
-
+from multiprocessing import Manager
+from multiprocessing import shared_memory as shm
+import sys
 
 class sarsa_parallel(framework):
     # implement Sarsa(lambda) algorithm
     def __init__(self, l):
         super().__init__()
-        self.E = self.Q  # eligibility traces -- same initialization as Q
+        # self.E = self.Q  # eligibility traces -- same initialization as Q
         self.lmd = l
         np.seterr(all='raise')
 
+        # set up shared memoery
+        shm_q = shm.SharedMemory(create=True, size=self.Q.nbytes)
+        shm_n = shm.SharedMemory(create=True, size=self.N.nbytes)
+        shm_v = shm.SharedMemory(create=True, size=self.V.nbytes)
+        # bar_size = sys.getsizeof(bar)
+        # shm_bar = shm.SharedMemory(create=True, size=sys.getsizeof(bar))
+
+        self.Q = np.zeros(self.Q.shape, dtype='float32', buffer=shm_q)  # action-state matrix Q = [d, p, a] where a=0: hit, a=1: stick
+        self.V = np.zeros(self.V.shape, dtype='float32', buffer=shm_v)  # value function
+        self.N = np.zeros(self.N.shape, dtype='int', buffer=shm_n)  # counts how many times a has been selected in a
+
+
     def getQ(self, i):  # load action-state matrix. i: number of episodes to go through
+
         bar = self.getBar('Parallel Iterations: ', i)
-        for i in range(i):
-            self.E = np.zeros((10, 22, 2), dtype='float32')
+
+        with Manager() as m:
+
+            for i in range(i):
+                E = np.zeros((10, 22, 2), dtype='float32')
             # for dealer in range(0, len(self.Q)):
             #
             #     Q = self.Q[dealer]
             #     N = self.N[dealer]
             #     E = self.E[dealer]
-            print(hex(id(self.Q[0])))
-            num_cores = 8
-            # batch = int(i / num_cores)
-            # iter_ = partial(self.iterate, d=dealer, Q=Q, N=N, E=E)
-            # self.Q, self.N, self.E = \
-            res = \
-                Parallel(
-                    n_jobs=num_cores,
-                    # batch_size = batch,
-                    verbose=0,
-                    backend='loky')\
-                    (delayed(self.iterate)(self.S[d],
-                                           self.Q[d],
-                                           self.N[d],
-                                           self.E[d])
-                                for d in range(len(self.Q)))
-            resQ, resN = zip(*res)
-            self.Q = np.array(resQ)
-            self.N = np.array(resN)
+
+
+
+            ###### first parallization try
+
+            # num_cores = 8
+            # # batch = int(i / num_cores)
+            # # iter_ = partial(self.iterate, d=dealer, Q=Q, N=N, E=E)
+            # # self.Q, self.N, self.E = \
+            # res = \
+            #     Parallel(
+            #         n_jobs=num_cores,
+            #         # batch_size = batch,
+            #         verbose=0,
+            #         backend='loky')\
+            #         (delayed(self.iterate)(self.S[d],
+            #                                self.Q[d],
+            #                                self.N[d],
+            #                                self.E[d])
+            #                     for d in range(len(self.Q)))
+            # resQ, resN = zip(*res)
+            # self.Q = np.array(resQ)
+            # self.N = np.array(resN)
+
+            ##### second try using threads AND processes
+
+
+
+
             bar.next()
         bar.finish()
 

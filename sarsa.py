@@ -5,9 +5,7 @@ from src import framework
 from mc import mc
 import numpy as np
 import random as rd
-from os.path import exists
 import matplotlib.pyplot as plt
-from joblib import Parallel, delayed
 
 
 # state space S[d, p]
@@ -28,9 +26,10 @@ class sarsa(framework):
     def getQ(self, i):  # load action-state matrix. i: number of episodes to go through
         bar = self.getBar('Iterations: ', i)
         for i in range(0, i):
-            self.E = np.zeros((10, 22, 2), dtype='float32')
+            
             for d in range(0, len(self.Q)):
                 for p in range(0, len(self.Q[0])):
+                    self.E = np.zeros((10, 22, 2), dtype='float32')
                     a = self.epsilon(self.S[d][p])  # get action from epsilon-greedy policy
                     s_next, reward = self.step(self.S[d][p], a)  # get next state
                     self.update(d, self.S[d][p], s_next, a, reward)  # update Q, E

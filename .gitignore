@@ -2,4 +2,5 @@
 *.png
 *.txt
 .idea
+joblib
 __pycache__
